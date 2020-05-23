@@ -1,0 +1,19 @@
+{
+  "name": "pr-leaderboard",
+  "version": "1.0.0",
+  "description": "Create a leaderboard for Github repos based on number of PRs",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "virajvchavan",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.3"
+  }
+}
