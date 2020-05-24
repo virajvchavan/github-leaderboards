@@ -1,20 +1,24 @@
 const express = require("express");
 const fetch = require("node-fetch");
+const mongoose = require("mongoose");
+const Contest = require('./models/Contest');
+
 const BATCH_SIZE = 100; // Github API's limitation per request
 const accessToken = "693b3c6b5ffb464ea368e81ceac8d6a7c5358140";
 
 const app = express();
+mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 
 let fetchData = async (owner, repository) => {
     const query = `
         query { 
             repository(owner:"${owner}", name: "${repository}") {
                 pullRequests(states:MERGED, first:${BATCH_SIZE}) {
-                nodes {
-                    author {
-                        login
+                    nodes {
+                        author {
+                            login
+                        }
                     }
-                }
                 }
             }
         }`;
