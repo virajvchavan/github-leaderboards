@@ -15,38 +15,22 @@ mongoose.connect(
 let fetchData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
     let contest = await Contest.findOne({key: contestKey}) || new Contest({key: contestKey});
-    let cursorParam = contest.merged_prs_cursor ? `,after:"${contest.merged_prs_cursor}"` : "";
-    const query = `
-        query { 
-            repository(owner:"${owner}", name: "${repository}") {
-                pullRequests(states:MERGED, first:${BATCH_SIZE}${cursorParam}) {
-                    nodes {
-                        id
-                        author {
-                            login
-                            avatarUrl
-                        }
-                    }
-                    pageInfo {
-                        endCursor
-                        startCursor
-                    }
-                }
-            }
-        }`;
+    contest = await fetchMergedPrs(contest);
+    await contest.save();
+    return { users: contest.users };
+}
 
+const fetchMergedPrs = async (contest) => {
     let result = await fetch("https://api.github.com/graphql", {
         method: "POST",
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query: formQueryForPRs('merged', contest) }),
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
     })
     result = await result.json();
     if (result.errors) {
-        return {
-            errors: result.errors
-        }
+        console.log("error fetching merged prs: ", result.errors);
     } else {
         let pullRequests = result['data']['repository']['pullRequests'];
         if (pullRequests["pageInfo"]["endCursor"]) {
@@ -66,9 +50,31 @@ let fetchData = async (owner, repository) => {
             user.merged_prs.push(pr.id);
             contest.users[pr.author.login] = user;
         });
-        contest.save();
-        return {users: contest.users};
     }
+    return contest;
+}
+
+const formQueryForPRs = (type, contest) => {
+    let [owner, repository] = contest.key.split("/");
+    let cursorParam = contest[type + '_prs_cursor'] ? `,after:"${contest[type + '_prs_cursor']}"` : "";
+    return `
+        query {
+            repository(owner:"${owner}", name: "${repository}") {
+                pullRequests(states:${type.toUpperCase()}, first:${BATCH_SIZE}${cursorParam}) {
+                    nodes {
+                        id
+                        author {
+                            login
+                            avatarUrl
+                        }
+                    }
+                    pageInfo {
+                        endCursor
+                        startCursor
+                    }
+                }
+            }
+        }`;
 }
 
 app.get("/leaderboard", (request, response) => {
