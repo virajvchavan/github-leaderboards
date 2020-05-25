@@ -14,7 +14,7 @@ mongoose.connect(
     { useNewUrlParser: true, useUnifiedTopology: true }
 );
 
-let fetchData = async (owner, repository) => {
+let fetchAndBuildData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
     let contest = await Contest.findOne({key: contestKey}) || new Contest({key: contestKey});
     contest = await fetchMergedPrs(contest);
@@ -23,13 +23,7 @@ let fetchData = async (owner, repository) => {
 }
 
 const fetchMergedPrs = async (contest) => {
-    let result = await fetch("https://api.github.com/graphql", {
-        method: "POST",
-        body: JSON.stringify({ query: formQueryForPRs('merged', contest) }),
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    })
+    let result = await callGithubAPI(graphQLQueryForPRs("merged", contest));
     result = await result.json();
     if (result.errors) {
         console.log("error fetching merged prs: ", result.errors);
@@ -67,7 +61,17 @@ const fetchMergedPrs = async (contest) => {
     return contest;
 }
 
-const formQueryForPRs = (type, contest) => {
+const callGithubAPI = (query) => {
+    return fetch("https://api.github.com/graphql", {
+        method: "POST",
+        body: JSON.stringify({ query: query }),
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+}
+
+const graphQLQueryForPRs = (type, contest) => {
     let [owner, repository] = contest.key.split("/");
     let cursorParam = contest[type + '_prs_cursor'] ? `,after:"${contest[type + '_prs_cursor']}"` : "";
     return `
@@ -92,7 +96,7 @@ const formQueryForPRs = (type, contest) => {
 
 app.get("/leaderboard", (request, response) => {
     if (request.query.owner && request.query.repo) {
-        fetchData(request.query.owner, request.query.repo).then(data => {
+        fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
             response.json(data);
         });
     } else {
