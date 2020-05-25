@@ -17,25 +17,31 @@ mongoose.connect(
 let fetchAndBuildData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
     let contest = await Contest.findOne({key: contestKey}) || new Contest({key: contestKey});
-    contest = await fetchMergedPrs(contest);
-    await contest.save();
+    contest = await fetchPRs('merged', contest);
+    if(contest.error) {
+        return contest;
+    } else {
+        await contest.save();
+    }
     return { users: contest.users };
 }
 
-const fetchMergedPrs = async (contest) => {
-    let result = await callGithubAPI(graphQLQueryForPRs("merged", contest));
+const fetchPRs = async (type, contest) => {
+    let result = await callGithubAPI(graphQLQueryForPRs(type, contest));
     result = await result.json();
     if (result.errors) {
-        console.log("error fetching merged prs: ", result.errors);
+        console.log(`error fetching ${type} prs: `, result.errors);
         if (result.errors[0].type === "INVALID_CURSOR_ARGUMENTS") {
-            contest.merged_prs_cursor = "";
-            contest = fetchMergedPrs(contest);
+            contest[`${type}_prs_cursor`] = "";
+            contest = fetchPRs(type, contest);
+        } else if (result.errors[0].type === "NOT_FOUND") {
+            return { error: "Repository not found." };
         }
     } else {
         let pullRequests = result['data']['repository']['pullRequests'];
         if (pullRequests['nodes'].length > 0) {
             if (pullRequests["pageInfo"]["endCursor"]) {
-                contest.merged_prs_cursor = pullRequests["pageInfo"]["endCursor"];
+                contest[`${type}_prs_cursor`] = pullRequests["pageInfo"]["endCursor"];
             }
             contest.users = contest.users || {};
             pullRequests["nodes"].forEach(async (pr) => {
@@ -43,19 +49,17 @@ const fetchMergedPrs = async (contest) => {
                 if (pr.author && pr.author.login) {
                     let user = contest.users[pr.author.login] || {};
                     if (!user.picture) user.picture = pr.author.avatarUrl;
-                    user.merged_prs = user.merged_prs || [];
+                    user[`${type}_prs`] = user[`${type}_prs`] || [];
 
-                    user.merged_prs.filter((value) => value !== pr.id);
-                    user.closed_prs &&
-                        user.closed_prs.filter((value) => value !== pr.id);
-                    user.open_prs &&
-                        user.open_prs.filter((value) => value !== pr.id);
+                    user.merged_prs = removeValueFromArray(user.merged_prs || [], pr.id);
+                    user.closed_prs = removeValueFromArray(user.closed_prs || [], pr.id);
+                    user.open_prs = removeValueFromArray(user.open_prs || [], pr.id);
 
-                    user.merged_prs.push(pr.id);
+                    user[`${type}_prs`].push(pr.id);
                     contest.users[pr.author.login] = user;
                 }
             });
-            contest = fetchMergedPrs(contest);
+            contest = fetchPRs(type, contest);
         }
     }
     return contest;
@@ -92,6 +96,10 @@ const graphQLQueryForPRs = (type, contest) => {
                 }
             }
         }`;
+}
+
+const removeValueFromArray = (array, value) => {
+    return array.filter((item) => item !== value);
 }
 
 app.get("/leaderboard", (request, response) => {
