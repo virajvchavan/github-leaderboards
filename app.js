@@ -1,12 +1,14 @@
 const express = require("express");
 const fetch = require("node-fetch");
 const mongoose = require("mongoose");
+var morgan = require("morgan");
 const Contest = require('./models/Contest');
 
 const BATCH_SIZE = 100; // Github API's limitation per request
 const accessToken = "693b3c6b5ffb464ea368e81ceac8d6a7c5358140";
 
 const app = express();
+app.use(morgan("dev"));
 mongoose.connect(
     "mongodb+srv://viraj:virajpassword@cluster0-qvgd5.mongodb.net/repos?retryWrites=true&w=majority",
     { useNewUrlParser: true, useUnifiedTopology: true }
@@ -31,28 +33,33 @@ const fetchMergedPrs = async (contest) => {
     result = await result.json();
     if (result.errors) {
         console.log("error fetching merged prs: ", result.errors);
+        if (result.errors[0].type === "INVALID_CURSOR_ARGUMENTS") {
+            contest.merged_prs_cursor = "";
+            contest = fetchMergedPrs(contest);
+        }
     } else {
         let pullRequests = result['data']['repository']['pullRequests'];
         if (pullRequests['nodes'].length > 0) {
             if (pullRequests["pageInfo"]["endCursor"]) {
-                contest.merged_prs_cursor =
-                    pullRequests["pageInfo"]["endCursor"];
+                contest.merged_prs_cursor = pullRequests["pageInfo"]["endCursor"];
             }
             contest.users = contest.users || {};
             pullRequests["nodes"].forEach(async (pr) => {
                 console.log(pr);
-                let user = contest.users[pr.author.login] || {};
-                if (!user.picture) user.picture = pr.author.avatarUrl;
-                user.merged_prs = user.merged_prs || [];
+                if (pr.author && pr.author.login) {
+                    let user = contest.users[pr.author.login] || {};
+                    if (!user.picture) user.picture = pr.author.avatarUrl;
+                    user.merged_prs = user.merged_prs || [];
 
-                user.merged_prs.filter((value) => value !== pr.id);
-                user.closed_prs &&
-                    user.closed_prs.filter((value) => value !== pr.id);
-                user.open_prs &&
-                    user.open_prs.filter((value) => value !== pr.id);
+                    user.merged_prs.filter((value) => value !== pr.id);
+                    user.closed_prs &&
+                        user.closed_prs.filter((value) => value !== pr.id);
+                    user.open_prs &&
+                        user.open_prs.filter((value) => value !== pr.id);
 
-                user.merged_prs.push(pr.id);
-                contest.users[pr.author.login] = user;
+                    user.merged_prs.push(pr.id);
+                    contest.users[pr.author.login] = user;
+                }
             });
             contest = fetchMergedPrs(contest);
         }

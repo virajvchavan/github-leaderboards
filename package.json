@@ -12,7 +12,8 @@
   "dependencies": {
     "express": "^4.17.1",
     "node-fetch": "^2.6.0",
-    "mongoose": "^5.9.13"
+    "mongoose": "^5.9.13",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.3"
