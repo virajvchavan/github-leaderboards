@@ -33,23 +33,29 @@ const fetchMergedPrs = async (contest) => {
         console.log("error fetching merged prs: ", result.errors);
     } else {
         let pullRequests = result['data']['repository']['pullRequests'];
-        if (pullRequests["pageInfo"]["endCursor"]) {
-            contest.merged_prs_cursor = pullRequests["pageInfo"]["endCursor"];
+        if (pullRequests['nodes'].length > 0) {
+            if (pullRequests["pageInfo"]["endCursor"]) {
+                contest.merged_prs_cursor =
+                    pullRequests["pageInfo"]["endCursor"];
+            }
+            contest.users = contest.users || {};
+            pullRequests["nodes"].forEach(async (pr) => {
+                console.log(pr);
+                let user = contest.users[pr.author.login] || {};
+                if (!user.picture) user.picture = pr.author.avatarUrl;
+                user.merged_prs = user.merged_prs || [];
+
+                user.merged_prs.filter((value) => value !== pr.id);
+                user.closed_prs &&
+                    user.closed_prs.filter((value) => value !== pr.id);
+                user.open_prs &&
+                    user.open_prs.filter((value) => value !== pr.id);
+
+                user.merged_prs.push(pr.id);
+                contest.users[pr.author.login] = user;
+            });
+            contest = fetchMergedPrs(contest);
         }
-        contest.users = contest.users || {};
-        pullRequests['nodes'].forEach(async (pr) => {
-            console.log(pr);
-            let user = contest.users[pr.author.login] || {};
-            if (!user.picture) user.picture = pr.author.avatarUrl;
-            user.merged_prs = user.merged_prs || [];
-
-            user.merged_prs.filter(value => value !== pr.id)
-            user.closed_prs && user.closed_prs.filter(value => value !== pr.id)
-            user.open_prs && user.open_prs.filter(value => value !== pr.id)
-
-            user.merged_prs.push(pr.id);
-            contest.users[pr.author.login] = user;
-        });
     }
     return contest;
 }
