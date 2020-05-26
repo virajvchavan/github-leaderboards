@@ -18,8 +18,8 @@ const fetchAndBuildData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
     let contest = await Contest.findOne({key: contestKey}) || new Contest({key: contestKey});
     contest = await fetchPRs('merged', contest);
-    contest = await fetchPRs('open', contest);
-    contest = await fetchPRs('closed', contest);
+    contest = contest.error ? contest : await fetchPRs('open', contest);
+    contest = contest.error ? contest : await fetchPRs("closed", contest);
     if(contest.error) {
         return contest;
     } else {
