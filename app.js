@@ -14,7 +14,7 @@ mongoose.connect(
     { useNewUrlParser: true, useUnifiedTopology: true }
 );
 
-let fetchAndBuildData = async (owner, repository) => {
+const fetchAndBuildData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
     let contest = await Contest.findOne({key: contestKey}) || new Contest({key: contestKey});
     contest = await fetchPRs('merged', contest);
@@ -25,7 +25,21 @@ let fetchAndBuildData = async (owner, repository) => {
     } else {
         await contest.save();
     }
-    return { users: contest.users };
+    return { users: await users_pr_counts(contestKey) };
+}
+
+const users_pr_counts = async (contestKey) => {
+    let contest = await Contest.findOne({ key: contestKey });
+    let users = [];
+    Object.keys(contest.users).forEach(username => {
+        users.push({
+            username: username,
+            merged_prs: contest.users[username].merged_prs && contest.users[username].merged_prs.length,
+            open_prs: contest.users[username].open_prs && contest.users[username].open_prs.length,
+            closed_prs: contest.users[username].closed_prs && contest.users[username].closed_prs.length
+        });
+    });
+    return users;
 }
 
 const fetchPRs = async (type, contest) => {
