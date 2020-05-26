@@ -55,7 +55,15 @@ const fetchPRs = async (type, contest) => {
 
                     user.merged_prs = removeValueFromArray(user.merged_prs || [], pr.id);
                     user.closed_prs = removeValueFromArray(user.closed_prs || [], pr.id);
-                    user.open_prs = removeValueFromArray(user.open_prs || [], pr.id);
+
+                    // if a PR that was open is now closed, then reset the open_prs_cursor
+                    // so that if the same PR is reopened, it'll be returned by the new cursor as open_pr
+                    if (user.open_prs && user.open_prs.includes(pr.id)) {
+                        if (type === 'closed') {
+                            user.open_prs = removeValueFromArray(user.open_prs, pr.id);
+                            contest.open_prs_cursor = "";
+                        }
+                    }
 
                     user[`${type}_prs`].push(pr.id);
                     contest.users[pr.author.login] = user;
