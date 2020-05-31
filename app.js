@@ -25,8 +25,9 @@ const fetchAndBuildData = async (owner, repository) => {
     } else {
         if (contest.processing) {
             return { status: "Processing..." };
+        } else {
+            await buildData(contest);
         }
-        await buildData(contest);
     }
     return { users: await users_pr_counts(contestKey) };
 }
