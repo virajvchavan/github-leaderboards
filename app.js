@@ -39,7 +39,7 @@ const users_pr_counts = async (contestKey) => {
             closed_prs: contest.users[username].closed_prs && contest.users[username].closed_prs.length
         });
     });
-    return users;
+    return users.sort((a, b) => b.merged_prs - a.merged_prs);
 }
 
 const fetchPRs = async (type, contest) => {
