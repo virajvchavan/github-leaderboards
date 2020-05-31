@@ -16,16 +16,31 @@ mongoose.connect(
 
 const fetchAndBuildData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
-    let contest = await Contest.findOne({key: contestKey}) || new Contest({key: contestKey});
+    let contest = await Contest.findOne({key: contestKey})
+    if (!contest) {
+        contest = new Contest({ key: contestKey, processing: true });
+        await contest.save();
+        buildData(contest);
+        return { status: "Processing..." };
+    } else {
+        if (contest.processing) {
+            return { status: "Processing..." };
+        }
+        await buildData(contest);
+    }
+    return { users: await users_pr_counts(contestKey) };
+}
+
+const buildData = async (contest) => {
     contest = await fetchPRs('merged', contest);
     contest = contest.error ? contest : await fetchPRs('open', contest);
     contest = contest.error ? contest : await fetchPRs("closed", contest);
     if(contest.error) {
         return contest;
     } else {
+        contest.processing = false;
         await contest.save();
     }
-    return { users: await users_pr_counts(contestKey) };
 }
 
 const users_pr_counts = async (contestKey) => {

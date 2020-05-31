@@ -15,6 +15,7 @@ let contestSchema = new Schema({
     closed_prs_cursor: String,
     merged_prs_cursor: String,
     users: Object,
+    processing: Boolean
 });
 
 module.exports = mongoose.model("Contest", contestSchema);
