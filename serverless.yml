@@ -67,6 +67,9 @@ functions:
       GITHUB_ACCESS_TOKEN: "693b3c6b5ffb464ea368e81ceac8d6a7c5358140"
       DB_URL: "mongodb+srv://viraj:virajpassword@cluster0-qvgd5.mongodb.net/test?retryWrites=true&w=majority"
 
+plugins:
+  - serverless-offline
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details

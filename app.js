@@ -157,8 +157,4 @@ app.get("/leaderboard", (request, response) => {
     }
 });
 
-app.listen(3000, () => {
-    console.log("server started! On 3000");
-});
-
 module.exports.handler = serverless(app);
