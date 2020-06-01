@@ -5,14 +5,13 @@ var morgan = require("morgan");
 const Contest = require('./models/Contest');
 
 const BATCH_SIZE = 100; // Github API's limitation per request
-const accessToken = "693b3c6b5ffb464ea368e81ceac8d6a7c5358140";
 
 const app = express();
 app.use(morgan("dev"));
-mongoose.connect(
-    "mongodb+srv://viraj:virajpassword@cluster0-qvgd5.mongodb.net/repos?retryWrites=true&w=majority",
-    { useNewUrlParser: true, useUnifiedTopology: true }
-);
+mongoose.connect(process.env.DB_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 const fetchAndBuildData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
@@ -115,7 +114,7 @@ const callGithubAPI = (query) => {
         method: "POST",
         body: JSON.stringify({ query: query }),
         headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${process.env.GITHUB_ACCESS_TOKEN}`,
         },
     });
 }
