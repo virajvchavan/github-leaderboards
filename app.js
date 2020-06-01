@@ -1,4 +1,5 @@
 const express = require("express");
+const serverless = require("serverless-http");
 const fetch = require("node-fetch");
 const mongoose = require("mongoose");
 var morgan = require("morgan");
@@ -159,3 +160,5 @@ app.get("/leaderboard", (request, response) => {
 app.listen(3000, () => {
     console.log("server started! On 3000");
 });
+
+module.exports.handler = serverless(app);

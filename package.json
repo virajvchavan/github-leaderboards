@@ -11,9 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "node-fetch": "^2.6.0",
     "mongoose": "^5.9.13",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "node-fetch": "^2.6.0",
+    "serverless-http": "^2.5.0"
   },
   "devDependencies": {
     "dotenv": "^8.2.0",
