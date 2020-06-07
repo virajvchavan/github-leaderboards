@@ -18,34 +18,38 @@ const fetchAndBuildData = async (owner, repository) => {
     let contestKey = `${owner}/${repository}`;
     let contest = await Contest.findOne({key: contestKey})
     if (!contest) {
-        contest = new Contest({ key: contestKey, processing: true });
+        contest = new Contest({ key: contestKey, status: "processing" });
         await contest.save();
         buildData(contest);
-        return { status: "Processing..." };
+        return { status: contest.status };
     } else {
-        if (contest.processing) {
-            return { status: "Processing..." };
+        if (contest.status === "processing") {
+            return { status: contest.status };
         } else {
             await buildData(contest);
         }
     }
-    return { users: await users_pr_counts(contestKey) };
+
+    contest = await Contest.findOne({ key: contestKey });
+    return { status: contest.status, users: await users_pr_counts(contest) };
 }
 
 const buildData = async (contest) => {
     contest = await fetchPRs('merged', contest);
-    contest = contest.error ? contest : await fetchPRs('open', contest);
-    contest = contest.error ? contest : await fetchPRs("closed", contest);
-    if(contest.error) {
-        return contest;
+    contest = contest.status === "error" ? contest : await fetchPRs('open', contest);
+    contest = contest.status === "error" ? contest : await fetchPRs("closed", contest);
+    if(contest.status === "error") {
+        await contest.save();
     } else {
-        contest.processing = false;
+        contest.status = "done";
         await contest.save();
     }
 }
 
-const users_pr_counts = async (contestKey) => {
-    let contest = await Contest.findOne({ key: contestKey });
+const users_pr_counts = async (contest) => {
+    if (contest.status === "error") {
+        return [];
+    }
     let users = [];
     Object.keys(contest.users).forEach(username => {
         users.push({
@@ -72,11 +76,12 @@ const fetchPRs = async (type, contest) => {
             contest[`${type}_prs_cursor`] = "";
             contest = fetchPRs(type, contest);
         } else if (result.errors[0].type === "NOT_FOUND") {
-            return { error: "Repository not found." };
+            contest.status = "error";
+            return contest;
         }
     } else {
         let pullRequests = result['data']['repository']['pullRequests'];
-        if (pullRequests['nodes'].length > 0) {
+        if (pullRequests['nodes'].length > 0) { // recursion termination condition
             if (pullRequests["pageInfo"]["endCursor"]) {
                 contest[`${type}_prs_cursor`] = pullRequests["pageInfo"]["endCursor"];
             }
