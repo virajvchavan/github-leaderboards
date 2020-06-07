@@ -152,7 +152,7 @@ const removeValueFromArray = (array, value) => {
     return array.filter((item) => item !== value);
 }
 
-app.get("/leaderboard", (request, response) => {
+app.get("/prs", (request, response) => {
     if (request.query.owner && request.query.repo) {
         fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
             response.json(data);

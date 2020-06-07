@@ -58,7 +58,7 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  hello:
+  leaderboard:
     handler: app.handler
     events:
       - http: ANY /
