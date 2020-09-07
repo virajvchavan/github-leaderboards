@@ -38,11 +38,22 @@ const buildData = async (contest) => {
     contest = await fetchPRs('merged', contest);
     contest = contest.status === "error" ? contest : await fetchPRs('open', contest);
     contest = contest.status === "error" ? contest : await fetchPRs("closed", contest);
-    if(contest.status === "error") {
-        await contest.save();
-    } else {
+
+    if(contest.status != "error") {
         contest.status = "done";
+    }
+
+    try {
         await contest.save();
+    } catch (error) {
+        // this is for handling a behaviour by Lambda functions
+        newContest = await Contest.findOne({key: contestKey});
+        newContest.open_prs_cursor = contest.open_prs_cursor;
+        newContest.closed_prs_cursor = contest.closed_prs_cursor;
+        newContest.merged_prs_cursor = contest.merged_prs_cursor;
+        newContest.users = contest.users;
+        newContest.status = newContest.status;
+        await newContest.save();
     }
 }
 
