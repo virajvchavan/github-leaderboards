@@ -153,12 +153,13 @@ const removeValueFromArray = (array, value) => {
 }
 
 app.get("/prs", (request, response) => {
+    console.log("Request received: " + request.query.owner + ", " + request.query.repo);
     if (request.query.owner && request.query.repo) {
         fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
             response.json(data);
         });
     } else {
-        response.json({ error: "Repository not available" });
+        response.json({ error: "Repository not available." });
     }
 });
 
