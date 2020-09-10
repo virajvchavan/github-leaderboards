@@ -165,6 +165,8 @@ const removeValueFromArray = (array, value) => {
 
 app.get("/prs", (request, response) => {
     console.log("Request received: " + request.query.owner + ", " + request.query.repo);
+    response.append('Access-Control-Allow-Origin', ['*']);
+    response.append('Access-Control-Allow-Methods', 'GET');
     if (request.query.owner && request.query.repo) {
         fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
             response.json(data);
