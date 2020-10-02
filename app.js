@@ -20,18 +20,26 @@ const fetchAndBuildData = async (owner, repository) => {
     if (!contest) {
         contest = new Contest({ key: contestKey, status: "processing" });
         await contest.save();
-        buildData(contest);
+        buildDataInBg(contest); // call a seperate lambda fn here
         return { status: contest.status };
     } else {
         if (contest.status === "processing") {
             return { status: contest.status };
         } else {
+            // fetch latest data based on cursors
             await buildData(contest);
         }
     }
 
     contest = await Contest.findOne({ key: contestKey });
     return { status: contest.status, users: await users_pr_counts(contest) };
+}
+
+const buildDataInBg = (contest) => {
+    console.log("calling build-data api");
+    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`).catch((err) => {
+        console.log("error calling buildData" + err);
+    });
 }
 
 const buildData = async (contest) => {
@@ -170,6 +178,21 @@ app.get("/prs", (request, response) => {
     if (request.query.owner && request.query.repo) {
         fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
             response.json(data);
+        });
+    } else {
+        response.json({ error: "Repository not available." });
+    }
+});
+
+app.get("/build-data", (request, response) => {
+    console.log("Request received for buildData: " + request.query.key);
+    response.append('Access-Control-Allow-Origin', ['*']);
+    response.append('Access-Control-Allow-Methods', 'GET');
+    if (request.query.key) {
+        Contest.findOne({key: request.query.key}).then(contest => {
+            buildData(contest).then(() => {
+                response.json({ status: "Success" });
+            });
         });
     } else {
         response.json({ error: "Repository not available." });
