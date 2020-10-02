@@ -36,7 +36,8 @@ const fetchAndBuildData = async (owner, repository) => {
 }
 
 const buildDataInBg = (contest) => {
-    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`, {method: "POST"}).catch((err) => {
+    console.log("calling build-data api");
+    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`).catch((err) => {
         console.log("error calling buildData" + err);
     });
 }
@@ -183,7 +184,7 @@ app.get("/prs", (request, response) => {
     }
 });
 
-app.post("/build-data", (request, response) => {
+app.get("/build-data", (request, response) => {
     console.log("Request received for buildData: " + request.query.key);
     response.append('Access-Control-Allow-Origin', ['*']);
     response.append('Access-Control-Allow-Methods', 'GET');
