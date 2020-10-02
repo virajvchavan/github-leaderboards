@@ -188,9 +188,10 @@ app.post("/build-data", (request, response) => {
     response.append('Access-Control-Allow-Origin', ['*']);
     response.append('Access-Control-Allow-Methods', 'GET');
     if (request.query.key) {
-        let contest = await Contest.findOne({key: request.query.key});
-        buildData(contest).then(() => {
-            response.json({ status: "Success" });
+        Contest.findOne({key: request.query.key}).then(contest => {
+            buildData(contest).then(() => {
+                response.json({ status: "Success" });
+            });
         });
     } else {
         response.json({ error: "Repository not available." });
