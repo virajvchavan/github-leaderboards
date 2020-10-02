@@ -41,7 +41,6 @@ const fetchAndBuildData = async (owner, repository) => {
 }
 
 const buildDataInBg = (contest) => {
-    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`, {method: "POST"});
     // const params = {
     //     FunctionName: "pr-leaderboard-dev-leaderboard",
     //     InvocationType: "Event",
@@ -54,6 +53,10 @@ const buildDataInBg = (contest) => {
     //       return new Error(`Error printing messages: ${JSON.stringify(error)}`);
     //     }
     //   });
+    console.log("calling build-data api");
+    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`).catch((err) => {
+        console.log("error calling buildData" + err);
+    });
 }
 
 const buildData = async (contest) => {
@@ -198,14 +201,15 @@ app.get("/prs", (request, response) => {
     }
 });
 
-app.post("/build-data", (request, response) => {
+app.get("/build-data", (request, response) => {
     console.log("Request received for buildData: " + request.query.key);
     response.append('Access-Control-Allow-Origin', ['*']);
     response.append('Access-Control-Allow-Methods', 'GET');
     if (request.query.key) {
-        let contest = await Contest.findOne({key: request.query.key});
-        buildData(contest).then(() => {
-            response.json({ status: "Success" });
+        Contest.findOne({key: request.query.key}).then(contest => {
+            buildData(contest).then(() => {
+                response.json({ status: "Success" });
+            });
         });
     } else {
         response.json({ error: "Repository not available." });
