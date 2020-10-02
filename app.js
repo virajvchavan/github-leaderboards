@@ -36,7 +36,9 @@ const fetchAndBuildData = async (owner, repository) => {
 }
 
 const buildDataInBg = (contest) => {
-    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`, {method: "POST"});
+    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`, {method: "POST"}).catch((err) => {
+        console.log("error calling buildData" + err);
+    });
 }
 
 const buildData = async (contest) => {
