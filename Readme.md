@@ -1,4 +1,5 @@
 Deployed here: https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/prs
+E.g.: https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/prs?owner=denoland&repo=deno
 
 Run locally: 
     - First install the serveless cli (https://www.serverless.com/framework/docs/getting-started/)

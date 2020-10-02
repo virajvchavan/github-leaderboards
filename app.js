@@ -4,6 +4,11 @@ const fetch = require("node-fetch");
 const mongoose = require("mongoose");
 var morgan = require("morgan");
 const Contest = require('./models/Contest');
+const AWS = require("aws-sdk");
+
+const lambda = new AWS.Lambda({
+  region: "us-east-1"
+});
 
 const BATCH_SIZE = 100; // Github API's limitation per request
 
@@ -37,6 +42,18 @@ const fetchAndBuildData = async (owner, repository) => {
 
 const buildDataInBg = (contest) => {
     fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`, {method: "POST"});
+    // const params = {
+    //     FunctionName: "pr-leaderboard-dev-leaderboard",
+    //     InvocationType: "Event",
+    //     Payload: JSON.stringify(message_string)
+    //   };
+  
+    //   return lambda.invoke(params, function(error, data) {
+    //     if (error) {
+    //       console.error(JSON.stringify(error));
+    //       return new Error(`Error printing messages: ${JSON.stringify(error)}`);
+    //     }
+    //   });
 }
 
 const buildData = async (contest) => {
