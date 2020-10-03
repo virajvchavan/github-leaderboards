@@ -215,16 +215,13 @@ module.exports.handler = async (event, context) => {
     }
 };
 
-module.exports.buildData = (event, context, callback) => {
-    const requestBody = JSON.parse(event.body);
-    console.log("Request received for buildData: " + requestBody.key);
-    if (requestBody.key) {
-        Contest.findOne({key: requestBody.key}).then(contest => {
-            buildData(contest).then(() => {
-                callback(null, { statusCode: 200 });
-            });
-        });
+module.exports.buildData = async (event, context) => {
+    console.log("Request received for buildData: " + event.key);
+    if (event.key) {
+        let contest = await Contest.findOne({key: event.key});
+        await buildData(contest);
+        return { statusCode: 200 };
     } else {
-        callback(null, { statusCode: 404 });
+        return { statusCode: 404 };
     }
 };
