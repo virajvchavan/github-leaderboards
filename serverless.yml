@@ -65,6 +65,7 @@ provider:
 functions:
   leaderboard:
     handler: app.handler
+    timeout: 20
     events:
       - http:
           method: get
