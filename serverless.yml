@@ -65,7 +65,6 @@ provider:
 functions:
   leaderboard:
     handler: app.handler
-    timeout: 20
     events:
       - http:
           method: get
@@ -85,10 +84,6 @@ functions:
       - http:
           method: get
           path: build-data
-          request:
-            parameters:
-              queryStrings:
-                key: true
     environment:
       GITHUB_ACCESS_TOKEN: "693b3c6b5ffb464ea368e81ceac8d6a7c5358140"
       DB_URL: "mongodb+srv://viraj:virajpassword@cluster0-qvgd5.mongodb.net/test?retryWrites=true&w=majority"

@@ -1,4 +1,3 @@
-const serverless = require("serverless-http");
 const fetch = require("node-fetch");
 const mongoose = require("mongoose");
 const Contest = require('./models/Contest');
@@ -186,37 +185,7 @@ const removeValueFromArray = (array, value) => {
     return array.filter((item) => item !== value);
 }
 
-// app.get("/prs", (request, response) => {
-//     console.log("Request received: " + request.query.owner + ", " + request.query.repo);
-//     response.append('Access-Control-Allow-Origin', ['*']);
-//     response.append('Access-Control-Allow-Methods', 'GET');
-//     if (request.query.owner && request.query.repo) {
-//         fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
-//             response.json(data);
-//         });
-//     } else {
-//         response.json({ error: "Repository not available." });
-//     }
-// });
-
-// app.get("/build-data", (request, response) => {
-//     console.log("Request received for buildData: " + request.query.key);
-//     response.append('Access-Control-Allow-Origin', ['*']);
-//     response.append('Access-Control-Allow-Methods', 'GET');
-//     if (request.query.key) {
-//         Contest.findOne({key: request.query.key}).then(contest => {
-//             buildData(contest).then(() => {
-//                 response.json({ status: "Success" });
-//             });
-//         });
-//     } else {
-//         response.json({ error: "Repository not available." });
-//     }
-// });
-
 module.exports.handler = (event, context, callback) => {
-    // response.append('Access-Control-Allow-Origin', ['*']);
-    // response.append('Access-Control-Allow-Methods', 'GET');
     const {owner, repo} = event.queryStringParameters;
     console.log("Request received: " + owner + ", " + repo);
     if (owner && event) {

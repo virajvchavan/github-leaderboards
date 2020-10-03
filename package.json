@@ -12,8 +12,7 @@
   "dependencies": {
     "aws-sdk": "^2.766.0",
     "mongoose": "^5.9.13",
-    "node-fetch": "^2.6.0",
-    "serverless-http": "^2.5.0"
+    "node-fetch": "^2.6.0"
   },
   "devDependencies": {
     "dotenv": "^8.2.0",
