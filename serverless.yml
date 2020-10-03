@@ -66,8 +66,28 @@ functions:
   leaderboard:
     handler: app.handler
     events:
-      - http: ANY /
-      - http: 'ANY {proxy+}'
+      - http:
+          method: get
+          path: prs
+          request:
+            parameters:
+              queryStrings:
+                owner: true
+                repo: true
+    environment:
+      GITHUB_ACCESS_TOKEN: "693b3c6b5ffb464ea368e81ceac8d6a7c5358140"
+      DB_URL: "mongodb+srv://viraj:virajpassword@cluster0-qvgd5.mongodb.net/test?retryWrites=true&w=majority"
+
+  buildData:
+    handler: app.buildData
+    events:
+      - http:
+          method: get
+          path: build-data
+          request:
+            parameters:
+              queryStrings:
+                key: true
     environment:
       GITHUB_ACCESS_TOKEN: "693b3c6b5ffb464ea368e81ceac8d6a7c5358140"
       DB_URL: "mongodb+srv://viraj:virajpassword@cluster0-qvgd5.mongodb.net/test?retryWrites=true&w=majority"

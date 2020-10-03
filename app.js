@@ -1,8 +1,6 @@
-const express = require("express");
 const serverless = require("serverless-http");
 const fetch = require("node-fetch");
 const mongoose = require("mongoose");
-var morgan = require("morgan");
 const Contest = require('./models/Contest');
 const AWS = require("aws-sdk");
 
@@ -12,8 +10,6 @@ const lambda = new AWS.Lambda({
 
 const BATCH_SIZE = 100; // Github API's limitation per request
 
-const app = express();
-app.use(morgan("dev"));
 mongoose.connect(process.env.DB_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -41,22 +37,24 @@ const fetchAndBuildData = async (owner, repository) => {
 }
 
 const buildDataInBg = (contest) => {
-    // const params = {
-    //     FunctionName: "pr-leaderboard-dev-leaderboard",
-    //     InvocationType: "Event",
-    //     Payload: JSON.stringify(message_string)
-    //   };
-  
-    //   return lambda.invoke(params, function(error, data) {
-    //     if (error) {
-    //       console.error(JSON.stringify(error));
-    //       return new Error(`Error printing messages: ${JSON.stringify(error)}`);
-    //     }
-    //   });
     console.log("calling build-data api");
-    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`).catch((err) => {
-        console.log("error calling buildData" + err);
+    const params = {
+        FunctionName: "pr-leaderboard-dev-buildData",
+        InvocationType: "Event",
+        Payload: JSON.stringify({key: contest.key})
+    };
+  
+    return lambda.invoke(params, function(error, data) {
+        if (error) {
+            console.error(JSON.stringify(error));
+            return new Error(`Error printing messages: ${JSON.stringify(error)}`);
+        } else {
+            console.log("Lambda invokation successful");
+        }
     });
+    // fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`).catch((err) => {
+    //     console.log("error calling buildData" + err);
+    // });
 }
 
 const buildData = async (contest) => {
@@ -188,32 +186,73 @@ const removeValueFromArray = (array, value) => {
     return array.filter((item) => item !== value);
 }
 
-app.get("/prs", (request, response) => {
-    console.log("Request received: " + request.query.owner + ", " + request.query.repo);
-    response.append('Access-Control-Allow-Origin', ['*']);
-    response.append('Access-Control-Allow-Methods', 'GET');
-    if (request.query.owner && request.query.repo) {
-        fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
-            response.json(data);
-        });
-    } else {
-        response.json({ error: "Repository not available." });
-    }
-});
+// app.get("/prs", (request, response) => {
+//     console.log("Request received: " + request.query.owner + ", " + request.query.repo);
+//     response.append('Access-Control-Allow-Origin', ['*']);
+//     response.append('Access-Control-Allow-Methods', 'GET');
+//     if (request.query.owner && request.query.repo) {
+//         fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
+//             response.json(data);
+//         });
+//     } else {
+//         response.json({ error: "Repository not available." });
+//     }
+// });
 
-app.get("/build-data", (request, response) => {
-    console.log("Request received for buildData: " + request.query.key);
-    response.append('Access-Control-Allow-Origin', ['*']);
-    response.append('Access-Control-Allow-Methods', 'GET');
-    if (request.query.key) {
-        Contest.findOne({key: request.query.key}).then(contest => {
-            buildData(contest).then(() => {
-                response.json({ status: "Success" });
+// app.get("/build-data", (request, response) => {
+//     console.log("Request received for buildData: " + request.query.key);
+//     response.append('Access-Control-Allow-Origin', ['*']);
+//     response.append('Access-Control-Allow-Methods', 'GET');
+//     if (request.query.key) {
+//         Contest.findOne({key: request.query.key}).then(contest => {
+//             buildData(contest).then(() => {
+//                 response.json({ status: "Success" });
+//             });
+//         });
+//     } else {
+//         response.json({ error: "Repository not available." });
+//     }
+// });
+
+module.exports.handler = (event, context, callback) => {
+    // response.append('Access-Control-Allow-Origin', ['*']);
+    // response.append('Access-Control-Allow-Methods', 'GET');
+    const {owner, repo} = event.queryStringParameters;
+    console.log("Request received: " + owner + ", " + repo);
+    if (owner && event) {
+        fetchAndBuildData(owner, repo).then(data => {
+            console.log("Sending data: " + data);
+            callback(null,{
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                  },
+                'body': JSON.stringify(data)
             });
         });
     } else {
-        response.json({ error: "Repository not available." });
+        callback(null,{
+            'statusCode': 404,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+              },
+            'body': JSON.stringify({error: "Repository not available"})
+        });
     }
-});
+};
 
-module.exports.handler = serverless(app);
+module.exports.buildData = (event, context, callback) => {
+    const requestBody = JSON.parse(event.body);
+    console.log("Request received for buildData: " + requestBody.key);
+    if (requestBody.key) {
+        Contest.findOne({key: requestBody.key}).then(contest => {
+            buildData(contest).then(() => {
+                callback(null, { statusCode: 200 });
+            });
+        });
+    } else {
+        callback(null, { statusCode: 404 });
+    }
+};
