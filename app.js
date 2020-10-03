@@ -185,30 +185,33 @@ const removeValueFromArray = (array, value) => {
     return array.filter((item) => item !== value);
 }
 
-module.exports.handler = (event, context, callback) => {
+module.exports.handler = async (event, context) => {
     const {owner, repo} = event.queryStringParameters;
     console.log("Request received: " + owner + ", " + repo);
     if (owner && event) {
-        fetchAndBuildData(owner, repo).then(data => {
-            console.log("Sending data: " + data);
-            callback(null,{
-                'statusCode': 200,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                  },
-                'body': JSON.stringify(data)
-            });
-        });
+        let data = await fetchAndBuildData(owner, repo);
+        console.log("Sending data: " + data);
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': JSON.stringify(data),
+            multiValueHeaders: {},
+            isBase64Encoded: false
+        };
     } else {
-        callback(null,{
+        return {
             'statusCode': 404,
             'headers': {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*',
-              },
-            'body': JSON.stringify({error: "Repository not available"})
-        });
+            },
+            'body': JSON.stringify({error: "Repository not available"}),
+            multiValueHeaders: {},
+            isBase64Encoded: false
+        };
     }
 };
 
