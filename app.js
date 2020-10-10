@@ -51,9 +51,6 @@ const buildDataInBg = (contest) => {
             console.log("Lambda invokation successful");
         }
     });
-    // fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`).catch((err) => {
-    //     console.log("error calling buildData" + err);
-    // });
 }
 
 const buildData = async (contest) => {
@@ -79,6 +76,8 @@ const buildData = async (contest) => {
     }
 }
 
+// fetch and format the data from the db
+// can be optimized by using aggregation pipelines on the db directly
 const users_pr_counts = async (contest) => {
     if (contest.status === "error") {
         return [];
