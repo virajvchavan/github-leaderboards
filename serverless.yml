@@ -29,11 +29,11 @@ provider:
 #  region: us-east-1
 
 # you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "lambda:InvokeFunction"
+      Resource: "*"
 #    - Effect: "Allow"
 #      Action:
 #        - "s3:PutObject"
@@ -47,6 +47,7 @@ provider:
 # you can define service wide environment variables here
 #  environment:
 #    variable1: value1
+  environment: ${file(env.yml):${self:provider.stage}}
 
 # you can add packaging information here
 #package:
@@ -61,11 +62,17 @@ functions:
   leaderboard:
     handler: app.handler
     events:
-      - http: ANY /
-      - http: 'ANY {proxy+}'
-    environment:
-      GITHUB_ACCESS_TOKEN: "693b3c6b5ffb464ea368e81ceac8d6a7c5358140"
-      DB_URL: "mongodb+srv://viraj:virajpassword@cluster0-qvgd5.mongodb.net/test?retryWrites=true&w=majority"
+      - http:
+          method: get
+          path: prs
+          request:
+            parameters:
+              queryStrings:
+                owner: true
+                repo: true
+
+  buildData:
+    handler: app.buildData
 
 plugins:
   - serverless-offline

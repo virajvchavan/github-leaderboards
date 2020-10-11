@@ -1,7 +1,9 @@
 Deployed here: https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/prs
+E.g.: https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/prs?owner=denoland&repo=deno
 
 Run locally: 
     - First install the serveless cli (https://www.serverless.com/framework/docs/getting-started/)
+    - Add a file env.yml with the required environment variables
     - `serverless offline start`
 Run locally with debug mode: `SLS_DEBUG=* serverless offline start`
 Deploy to cloud: `serverless deploy`

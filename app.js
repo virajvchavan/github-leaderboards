@@ -1,14 +1,14 @@
-const express = require("express");
-const serverless = require("serverless-http");
 const fetch = require("node-fetch");
 const mongoose = require("mongoose");
-var morgan = require("morgan");
 const Contest = require('./models/Contest');
+const AWS = require("aws-sdk");
+
+const lambda = new AWS.Lambda({
+  region: "us-east-1"
+});
 
 const BATCH_SIZE = 100; // Github API's limitation per request
 
-const app = express();
-app.use(morgan("dev"));
 mongoose.connect(process.env.DB_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -37,8 +37,19 @@ const fetchAndBuildData = async (owner, repository) => {
 
 const buildDataInBg = (contest) => {
     console.log("calling build-data api");
-    fetch(`https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/build-data?key=${contest.key}`).catch((err) => {
-        console.log("error calling buildData" + err);
+    const params = {
+        FunctionName: "pr-leaderboard-dev-buildData",
+        InvocationType: "Event",
+        Payload: JSON.stringify({key: contest.key})
+    };
+  
+    return lambda.invoke(params, function(error, data) {
+        if (error) {
+            console.error(JSON.stringify(error));
+            return new Error(`Error printing messages: ${JSON.stringify(error)}`);
+        } else {
+            console.log("Lambda invokation successful");
+        }
     });
 }
 
@@ -65,6 +76,8 @@ const buildData = async (contest) => {
     }
 }
 
+// fetch and format the data from the db
+// can be optimized by using aggregation pipelines on the db directly
 const users_pr_counts = async (contest) => {
     if (contest.status === "error") {
         return [];
@@ -171,32 +184,43 @@ const removeValueFromArray = (array, value) => {
     return array.filter((item) => item !== value);
 }
 
-app.get("/prs", (request, response) => {
-    console.log("Request received: " + request.query.owner + ", " + request.query.repo);
-    response.append('Access-Control-Allow-Origin', ['*']);
-    response.append('Access-Control-Allow-Methods', 'GET');
-    if (request.query.owner && request.query.repo) {
-        fetchAndBuildData(request.query.owner, request.query.repo).then(data => {
-            response.json(data);
-        });
+module.exports.handler = async (event, context) => {
+    const {owner, repo} = event.queryStringParameters;
+    console.log("Request received: " + owner + ", " + repo);
+    if (owner && event) {
+        let data = await fetchAndBuildData(owner, repo);
+        console.log("Sending data: " + data);
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': JSON.stringify(data),
+            multiValueHeaders: {},
+            isBase64Encoded: false
+        };
     } else {
-        response.json({ error: "Repository not available." });
+        return {
+            'statusCode': 404,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+            'body': JSON.stringify({error: "Repository not available"}),
+            multiValueHeaders: {},
+            isBase64Encoded: false
+        };
     }
-});
+};
 
-app.get("/build-data", (request, response) => {
-    console.log("Request received for buildData: " + request.query.key);
-    response.append('Access-Control-Allow-Origin', ['*']);
-    response.append('Access-Control-Allow-Methods', 'GET');
-    if (request.query.key) {
-        Contest.findOne({key: request.query.key}).then(contest => {
-            buildData(contest).then(() => {
-                response.json({ status: "Success" });
-            });
-        });
+module.exports.buildData = async (event, context) => {
+    console.log("Request received for buildData: " + event.key);
+    if (event.key) {
+        let contest = await Contest.findOne({key: event.key});
+        await buildData(contest);
+        return { statusCode: 200 };
     } else {
-        response.json({ error: "Repository not available." });
+        return { statusCode: 404 };
     }
-});
-
-module.exports.handler = serverless(app);
+};
