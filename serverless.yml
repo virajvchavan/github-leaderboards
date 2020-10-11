@@ -23,11 +23,6 @@ org: virajc
 provider:
   name: aws
   runtime: nodejs12.x
-  # iamRoleStatements:
-	#   - Effect: "Allow"
-	#     Action:
-	#       - lambda:InvokeFunction
-	#     Resource: "*"
 
 # you can overwrite defaults here
 #  stage: dev
