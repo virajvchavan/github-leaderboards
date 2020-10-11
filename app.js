@@ -185,7 +185,7 @@ const removeValueFromArray = (array, value) => {
 }
 
 module.exports.handler = async (event, context) => {
-    const {owner, repo} = event.queryStringParameters;
+    const {owner, repo} = event.queryStringParameters || {};
     console.log("Request received: " + owner + ", " + repo);
     if (owner && event) {
         let data = await fetchAndBuildData(owner, repo);
