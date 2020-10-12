@@ -79,7 +79,7 @@ const buildData = async (contest) => {
 // fetch and format the data from the db
 // can be optimized by using aggregation pipelines on the db directly
 const users_pr_counts = async (contest) => {
-    if (contest.status === "error") {
+    if (contest.status === "error" || !contest.users) {
         return [];
     }
     let users = [];
