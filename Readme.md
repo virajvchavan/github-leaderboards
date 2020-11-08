@@ -1,3 +1,11 @@
+> Ranks contributors for a Github repository based on number of pull requests merged.
+
+This is an API which is used here: https://github.com/virajvchavan/github-leaderboards-ui
+
+Code is supposed to be deployed as serverless functions.
+
+Built this to try out serverless deployments and the Serverless Framework (http://serverless.com/).
+
 Deployed here: https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/prs
 E.g.: https://ohwoj3u4oi.execute-api.us-east-1.amazonaws.com/dev/prs?owner=denoland&repo=deno
 
